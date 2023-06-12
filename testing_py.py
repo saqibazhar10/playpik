@@ -1,28 +1,51 @@
 import RPi.GPIO as GPIO
+from time import sleep
 
-JOYSTICK_VRX_PIN = 17
-JOYSTICK_VRY_PIN = 27
-JOYSTICK_SW_PIN = 22
-
-
+# Set up GPIO mode and pins
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(JOYSTICK_VRX_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.setup(JOYSTICK_VRY_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.setup(JOYSTICK_SW_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+joystick_pins = [17, 27, 22]  # Modify these as per your joystick pin configuration
 
+# Define joystick directions
+joystick_up = False
+joystick_down = False
+joystick_left = False
+joystick_right = False
 
-while True:
-    if GPIO.input(JOYSTICK_VRX_PIN) == GPIO.LOW:
-        print("Joystick moved left on X-axis")
-    elif GPIO.input(JOYSTICK_VRX_PIN) == GPIO.HIGH:
-        print("Joystick moved right on X-axis")
+# Callback function for joystick movement
+def joystick_callback(channel):
+    global joystick_up, joystick_down, joystick_left, joystick_right
+    
+    if channel == joystick_pins[0]:
+        joystick_up = GPIO.input(channel)
+    elif channel == joystick_pins[1]:
+        joystick_down = GPIO.input(channel)
+    elif channel == joystick_pins[2]:
+        joystick_left = GPIO.input(channel)
 
-    if GPIO.input(JOYSTICK_VRY_PIN) == GPIO.LOW:
-        print("Joystick moved down on Y-axis")
-    elif GPIO.input(JOYSTICK_VRY_PIN) == GPIO.HIGH:
-        print("Joystick moved up on Y-axis")
+    # Uncomment the line below if your joystick has a separate pin for right movement
+    # elif channel == joystick_pins[3]:
+    #     joystick_right = GPIO.input(channel)
 
-    if GPIO.input(JOYSTICK_SW_PIN) == GPIO.LOW:
-        print("Joystick switch pressed")
+# Set up GPIO pins for joystick input
+for pin in joystick_pins:
+    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.add_event_detect(pin, GPIO.BOTH, callback=joystick_callback)
 
-GPIO.cleanup()
+# Main loop
+try:
+    while True:
+        if joystick_up:
+            print('Joystick Up')
+        elif joystick_down:
+            print('Joystick Down')
+        elif joystick_left:
+            print('Joystick Left')
+        elif joystick_right:
+            print('Joystick Right')
+        else:
+            print('No Joystick Movement')
+
+        sleep(0.1)  # Adjust the delay as needed
+
+except KeyboardInterrupt:
+    GPIO.cleanup()
