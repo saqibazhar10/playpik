@@ -70,7 +70,7 @@ def select_option(forward=True):
     print("Selected:", options[current_option])
 
 try:
-    display.lcd_display_string("Welcome Everyone", 1)
+    display.lcd_display_string("Welcome to Prj", 1)
     display.lcd_display_string("Move Joystick", 2)
     sleep(1)
     while True:
