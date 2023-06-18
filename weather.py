@@ -1,5 +1,8 @@
 import RPi.GPIO as GPIO
 from email_new  import snd_email
+import drivers
+
+display = drivers.Lcd()
 
 # Set up GPIO mode
 GPIO.setmode(GPIO.BCM)
@@ -45,7 +48,7 @@ GPIO.setup(VRY_PIN, GPIO.IN)
 GPIO.setup(SW_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # Define the available options
-options= ['London-UK','Washington D.C.-US','Rome-Italy','Valletta-Malta','Berlin-Germany'
+options= ['London-UK','Washington-US','Rome-Italy','Valletta-Malta','Berlin-Germany'
             ,'Paris-France','Madrid-Spain','Beijing-China','Moscow-Russia','Tokyo-Japan']
 current_option = 0
 move_forward = False
@@ -57,10 +60,15 @@ def select_option(forward=True):
         current_option = (current_option + 1) % len(options)
     else:
         current_option = (current_option - 1) % len(options)
+    display.lcd_display_string(str(current_option),1)
+    display.lcd_display_string('press to select',2)
     print("Selected:", options[current_option])
 
 try:
     while True:
+        display.lcd_display_string("Welcome Everyone", 1)
+        display.lcd_display_string("Move Joystick", 2)
+        
         # Read the values from VRX, VRY, and SW pins
         vrx_value = GPIO.input(VRX_PIN)
         vry_value = GPIO.input(VRY_PIN)
@@ -85,16 +93,31 @@ try:
                 select_option(forward=False)
                 move_backward = False
         if sw_value == 0:
+            display.lcd_display_string('  Waiting  ',1)
+            display.lcd_display_string('    !!!    ',2)
             result=get_weather_and_humidity(options[current_option].split('-')[0])
+            sleep(2)
             if result:
                 weather, humidity ,temp,wind,icon= result
+                display.lcd_display_string('Condition : ',1)
+                display.lcd_display_string(str(weather),2)
+                sleep(2)
+                display.lcd_display_string('Temperature : ',1)
+                display.lcd_display_string(str(temp)+ '°C',2 )
+                sleep(2)
+                display.lcd_display_string('Humidity : ',1)
+                display.lcd_display_string(str(humidity) + '%',2)
+                sleep(2)
+                display.lcd_display_string('Wind Speed : ',1)
+                display.lcd_display_string(str(wind) + 'm/s',2)
+                sleep(2)
                 print(f"Weather : {weather}")
                 print(f"Humidity  : {humidity}%")
                 print(f"Temperature  : {temp}°C")
                 print(f"Wind  : {wind} m/s")
+            
                 snd_email(weather,humidity,temp,wind,str(icon),options[current_option])
             
 
 except KeyboardInterrupt:
     GPIO.cleanup()
-
