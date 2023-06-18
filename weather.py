@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 from email_new  import snd_email
+from time import sleep
 import drivers
 
 display = drivers.Lcd()
@@ -65,9 +66,10 @@ def select_option(forward=True):
     print("Selected:", options[current_option])
 
 try:
+    display.lcd_display_string("Welcome Everyone", 1)
+    display.lcd_display_string("Move Joystick", 2)
     while True:
-        display.lcd_display_string("Welcome Everyone", 1)
-        display.lcd_display_string("Move Joystick", 2)
+
         
         # Read the values from VRX, VRY, and SW pins
         vrx_value = GPIO.input(VRX_PIN)
