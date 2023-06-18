@@ -1,100 +1,78 @@
-import RPi.GPIO as GPIO
-from email_new  import snd_email
-
-# Set up GPIO mode
-GPIO.setmode(GPIO.BCM)
-
-# Define pin numbers for VRX, VRY, and SW
-VRX_PIN = 17
-VRY_PIN = 27
-SW_PIN = 22
-
-import requests
-
-def get_weather_and_humidity(country):
-    api_key = 'ee5696d5565f9607a0ee20de76d5aea9'
-    base_url = 'https://api.openweathermap.org/data/2.5/weather'
-
-    params = {'q': country, 'appid': api_key, 'units': 'metric'}
-    try:
-        response = requests.get(base_url, params=params)
-        data = response.json()
-        
-        if response.status_code == 200:
-            weather = data['weather'][0]['description']
-            humidity = data['main']['humidity']
-            temp = data['main']['temp']
-            wind = data['wind']['speed']
-            icon= data['weather'][0]['icon']
+from email.message import EmailMessage
+import datetime
+import ssl ,smtplib
 
 
 
-            return weather, humidity ,temp ,wind,icon
-        else:
-            print('Error:', data['message'])
-            return None
-    except requests.RequestException as e:
-        print('Request Error:', str(e))
-        return None
+def snd_email(weather,humid,temp,wind,icon,city):
+    icon_url = "https://openweathermap.org/img/w/" +icon+".png"
+    app_pass ="caaxioorhaptjdyp"
+    email_sender="saqibazharawan19@gmail.com"
+    email_receiver="saqibazharawan@gmail.com"
 
-# Set VRX and VRY pins as analog inputs
-GPIO.setup(VRX_PIN, GPIO.IN)
-GPIO.setup(VRY_PIN, GPIO.IN)
+    date = datetime.datetime.now()
+    subject = "Weather Update at " + str(date)
 
-# Set SW pin as a digital input with a pull-up resistor
-GPIO.setup(SW_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    msg = '''
+   <html>
+<head>
+    <style>
+        .weather-container {
+            background-color: #f1f1f1;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            max-width: 400px;
+            margin: 0 auto;
+            font-family: Arial, sans-serif;
+        }
 
-# Define the available options
-options= ['London-UK','Washington D.C.-US','Rome-Italy','Valletta-Malta','Berlin-Germany'
-            ,'Paris-France','Madrid-Spain','Beijing-China','Moscow-Russia','Tokyo-Japan']
-current_option = 0
-move_forward = False
-move_backward = False
+        .weather-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+        }
 
-def select_option(forward=True):
-    global current_option
-    if forward:
-        current_option = (current_option + 1) % len(options)
-    else:
-        current_option = (current_option - 1) % len(options)
-    print("Selected:", options[current_option])
-
-try:
-    while True:
-        # Read the values from VRX, VRY, and SW pins
-        vrx_value = GPIO.input(VRX_PIN)
-        vry_value = GPIO.input(VRY_PIN)
-        sw_value = GPIO.input(SW_PIN)
-
-        # Print the joystick values
-        
-
-        # Check joystick movement for option selection
-        if vrx_value == 0 and vry_value == 1:
-#             print(f"VRX: {vrx_value}, VRY: {vry_value}, SW: {sw_value}")
-            move_forward = True
-            move_backward = False
-        elif vrx_value == 1 and vry_value == 0:
-            move_backward = True
-            move_forward = False
-        elif vrx_value == 1 and vry_value == 1:
-            if move_forward:
-                select_option(forward=True)
-                move_forward = False
-            elif move_backward:
-                select_option(forward=False)
-                move_backward = False
-        if sw_value == 0:
-            result=get_weather_and_humidity(options[current_option].split('-')[0])
-            if result:
-                weather, humidity ,temp,wind,icon= result
-                print(f"Weather : {weather}")
-                print(f"Humidity  : {humidity}%")
-                print(f"Temperature  : {temp}°C")
-                print(f"Wind  : {wind} m/s")
-                snd_email(weather,humidity,temp,wind,str(icon),options[current_option])
+        .weather-details {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+        }
+    </style>
+</head>''' + f'''
+<body>
+ <div style="background-color:#eee;padding:10px 20px;">
+            <h2 style="font-family:Georgia, 'Times New Roman', Times, serif;color#454349;">Weather Update : {city}</h2>
+        </div>
+      
+    <div class="weather-container">
+       
+        <img class="weather-icon" src="{icon_url}" alt="Weather Icon">
+        <div class="weather-details">
+        <p>Condition: <strong>{weather}</strong></p>
+            <p>Temperature: <strong>{temp}°C</strong></p>
+            <p>Humidity: <strong>{humid}%</strong></p>
+            <p>Wind: <strong>{wind} m/s</strong></p>
             
+        </div>
+    </div>
+</body>
+</html>
+    '''
 
-except KeyboardInterrupt:
-    GPIO.cleanup()
+    
+
+    em = EmailMessage()
+    em['From'] = email_sender
+    em['To'] = email_receiver
+    em['Subject'] = subject
+    em.set_content(msg,subtype='html')
+
+    contxt = ssl.create_default_context()
+
+    with smtplib.SMTP_SSL('smtp.gmail.com',465,context=contxt) as smtp:
+        smtp.login(email_sender ,app_pass)
+        smtp.sendmail(email_sender,email_receiver,em.as_string())
+
+
 
