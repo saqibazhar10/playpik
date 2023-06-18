@@ -61,8 +61,12 @@ def select_option(forward=True):
         current_option = (current_option + 1) % len(options)
     else:
         current_option = (current_option - 1) % len(options)
-    display.lcd_display_string(str(current_option),1)
-    display.lcd_display_string('press to select',2)
+    to_display=options[current_option]
+    if len(to_display) < 16:
+        num_spaces = 16 - len(to_display)
+        to_display +=  ' ' * num_spaces
+    display.lcd_display_string(to_display,1)
+    display.lcd_display_string('press to select ',2)
     print("Selected:", options[current_option])
 
 try:
@@ -90,30 +94,38 @@ try:
             move_forward = False
         elif vrx_value == 1 and vry_value == 1:
             if move_forward:
+                display.lcd_clear()
                 select_option(forward=True)
                 move_forward = False
             elif move_backward:
+                display.lcd_clear()
                 select_option(forward=False)
                 move_backward = False
         if sw_value == 0:
-            display.lcd_display_string('  Waiting  ',1)
-            display.lcd_display_string('    !!!    ',2)
+            display.lcd_display_string('    Waiting    ',1)
+            display.lcd_display_string('      !!!      ',2)
+            display.lcd_clear() 
             result=get_weather_and_humidity(options[current_option].split('-')[0])
             sleep(2)
             if result:
+                display.lcd_clear()
                 weather, humidity ,temp,wind,icon= result
-                display.lcd_display_string('Condition : ',1)
+                display.lcd_display_string('Condition :     ',1)
                 display.lcd_display_string(str(weather),2)
                 sleep(2)
+                display.lcd_clear() 
                 display.lcd_display_string('Temperature : ',1)
                 display.lcd_display_string(str(temp)+ '°C',2 )
                 sleep(2)
+                display.lcd_clear() 
                 display.lcd_display_string('Humidity : ',1)
                 display.lcd_display_string(str(humidity) + '%',2)
                 sleep(2)
+                display.lcd_clear() 
                 display.lcd_display_string('Wind Speed : ',1)
                 display.lcd_display_string(str(wind) + 'm/s',2)
                 sleep(2)
+                display.lcd_clear() 
                 print(f"Weather : {weather}")
                 print(f"Humidity  : {humidity}%")
                 print(f"Temperature  : {temp}°C")
